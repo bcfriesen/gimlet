@@ -1,0 +1,14 @@
+Herein lies a rewrite of Casey Stark's Nyx post-processing suite "gimlet". In
+particular, rather than converting BoxLib plotfiles to HDF5 and then operating
+on HDF5 files to do the post-processing, gimlet now runs entirely in memory, in
+general taking as arguments one or more MultiFabs, and perhaps other auxiliary
+data such as a Geometry. As a result, it can run either "in situ" or
+"in-transit". Running "in situ" means that after a prescribed number of time
+steps, Nyx halts the simulation and runs gimlet on the data in memory (without
+needing to convert plotfiles, or write them at all). Running "in-transit" means
+the data is sent to a separate partition of compute cores (currently we do this
+via MPI), which then run gimlet while the remainder of the cores continue on
+with the Nyx simulation.
+
+The EOS included here is the one which came with gimlet originally. It is
+mostly copied from the EOS in Nyx itself.
