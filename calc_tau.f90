@@ -8,6 +8,7 @@ subroutine calc_tau (state_data, eos_data, mom, &
     use meth_params_module, only: NVAR, UEINT, URHO, TEMP_COMP
     use eos_module, only: nyx_eos_nh0_and_nhep
     use fundamental_constants_module, only: e_to_cgs, density_to_cgs
+    use atomic_rates_module, only: interp_to_this_z
     implicit none
 
     integer(c_int), intent(in) :: lo(3), hi(3), ng_mom, ng_state, ng_eos, ng_tau, dir
@@ -142,6 +143,8 @@ subroutine calc_tau (state_data, eos_data, mom, &
     ! Behold a confusing feature in Fortran: the indices of an array pointer always use standard indexing, i.e., start at 1, even if
     ! it points to a target array with non-standard indexing. So I can't use "do i = lo(), hi()" when looping over these array
     ! pointers even though that's the typical approach in BoxLib Fortran functions.
+
+    call interp_to_this_z(z)
 
     do i = lbound(tau_pencil, 1), ubound(tau_pencil, 1)
 
