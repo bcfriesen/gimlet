@@ -257,7 +257,7 @@ void ps3d (const MultiFab& mf,
     if (ParallelDescriptor::IOProcessor()) {
         std::ofstream power_spectrum_file;
         std::stringstream filename;
-        filename << field_name << "_power_spectrum_pdf_nstep_" << std::setfill('0') << std::setw(5) << nStep;
+        filename << field_name << "_ps3d_nstep_" << std::setfill('0') << std::setw(5) << nStep;
         power_spectrum_file.open(filename.str().c_str());
         power_spectrum_file << std::scientific;
         for (unsigned int i = 0; i < k_num_bins; ++i) {

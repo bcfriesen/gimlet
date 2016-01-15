@@ -464,7 +464,7 @@ void postprocess_tau_fields(MultiFab& tau, const Geometry &geom, const int dir, 
     if (ParallelDescriptor::IOProcessor()) {
         std::ofstream power_spectrum_file;
         std::stringstream filename;
-        filename << "flux_power_spectrum_pdf_nstep_" << std::setfill('0') << std::setw(5) << nStep << "_dir_" << dir;
+        filename << "flux_ps1d_nstep_" << std::setfill('0') << std::setw(5) << nStep << "_dir_" << dir;
         power_spectrum_file.open(filename.str().c_str());
         power_spectrum_file << std::scientific;
         for (unsigned int i = 0; i < k_num_bins; ++i) {
@@ -550,7 +550,7 @@ void postprocess_tau_fields(MultiFab& tau, const Geometry &geom, const int dir, 
     if (ParallelDescriptor::IOProcessor()) {
         std::ofstream k_mu_power_spectrum_file;
         std::stringstream filename;
-        filename << "flux_power_spectrum_k_mu_pdf_nstep_" << std::setfill('0') << std::setw(5) << nStep << "_dir_" << dir;
+        filename << "flux_pkmu_nstep_" << std::setfill('0') << std::setw(5) << nStep << "_dir_" << dir;
         k_mu_power_spectrum_file.open(filename.str().c_str());
         k_mu_power_spectrum_file << std::scientific;
         for (unsigned int i = 0; i < k_num_bins; ++i) {

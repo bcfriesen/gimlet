@@ -139,7 +139,7 @@ void temperature_density_pdf2d (const MultiFab& temperature,
 
         std::ofstream temperature_pdf_output_file;
         std::stringstream filename;
-        filename << "temperature_density_pdf2d_nstep_" << std::setfill('0') << std::setw(5) << nStep;
+        filename << "rhot_pdf2d_nstep_" << std::setfill('0') << std::setw(5) << nStep;
         temperature_pdf_output_file.open(filename.str().c_str());
         temperature_pdf_output_file << std::scientific;
         for (unsigned int i = 0; i < dpdf_num_bins; ++i) {

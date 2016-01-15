@@ -299,7 +299,7 @@ do_analysis(const Real     omega_b,
           std::cout << std::setfill('=') << std::setw(46) << " Calculating rho_b PDF ... " << std::flush;
         #warning TODO: make density PDF knobs run-time parameters
         time1 = ParallelDescriptor::second();
-        pdf (density_divided_by_mean, geom, nStep, "density", -2.0, 5.0, 400);
+        pdf (density_divided_by_mean, geom, nStep, "rhob", -2.0, 5.0, 400);
         total_time = ParallelDescriptor::second() - time1;
         if (ParallelDescriptor::IOProcessor())
           std::cout << std::setw(15) << " done. (" << total_time << " sec)" << std::endl;
@@ -308,7 +308,7 @@ do_analysis(const Real     omega_b,
             std::cout << std::setfill('=') << std::setw(46) << " Calculating rho_b P(k) ... " << std::flush;
         #warning TODO: make density power spectrum knobs run-time parameters
         time1 = ParallelDescriptor::second();
-        ps3d (density, geom, nStep, "density");
+        ps3d (density, geom, nStep, "rhob");
         total_time = ParallelDescriptor::second() - time1;
         if (ParallelDescriptor::IOProcessor())
             std::cout << std::setfill('=') << std::setw(15) << " done. (" << total_time << " sec)" << std::endl;
@@ -328,7 +328,7 @@ do_analysis(const Real     omega_b,
           std::cout << std::setfill('=') << std::setw(46) << " Calculating T PDF ... " << std::flush;
         #warning TODO: make temperature PDF knobs run-time parameters
         time1 = ParallelDescriptor::second();
-        pdf (temperature, geom, nStep, "temperature", 3.0, 8.0, 400);
+        pdf (temperature, geom, nStep, "temp", 3.0, 8.0, 400);
         total_time = ParallelDescriptor::second() - time1;
         if (ParallelDescriptor::IOProcessor())
           std::cout << std::setw(15) << " done. (" << total_time << " sec)" << std::endl;
@@ -337,7 +337,7 @@ do_analysis(const Real     omega_b,
           std::cout << std::setfill('=') << std::setw(46) << " Calculating T P(k) ... " << std::flush;
         #warning TODO: make temperature power spectrum knobs run-time parameters
         time1 = ParallelDescriptor::second();
-        ps3d (temperature, geom, nStep, "temperature");
+        ps3d (temperature, geom, nStep, "temp");
         total_time = ParallelDescriptor::second() - time1;
         if (ParallelDescriptor::IOProcessor())
             std::cout << std::setw(15) << " done. (" << total_time << " sec)" << std::endl;
@@ -382,7 +382,7 @@ do_analysis(const Real     omega_b,
           std::cout << std::setfill('=') << std::setw(46) << " Calculating rho_dm PDF ... " << std::flush;
         time1 = ParallelDescriptor::second();
         #warning TODO: make dm_density PDF knobs run-time parameters
-        pdf (dm_density_divided_by_mean, geom, nStep, "dm_density", -5.0, 5.0, 200);
+        pdf (dm_density_divided_by_mean, geom, nStep, "rhodm", -5.0, 5.0, 200);
         total_time = ParallelDescriptor::second() - time1;
         if (ParallelDescriptor::IOProcessor())
             std::cout << std::setw(15) << " done. (" << total_time << " sec)" << std::endl;
@@ -391,7 +391,7 @@ do_analysis(const Real     omega_b,
           std::cout << std::setfill('=') << std::setw(46) << " Calculating rho_dm P(k) ... " << std::flush;
         time1 = ParallelDescriptor::second();
         #warning TODO: make dm_density power spectrum knobs run-time parameters
-        ps3d (dm_density, geom, nStep, "dm_density", true);
+        ps3d (dm_density, geom, nStep, "rhodm", true);
         total_time = ParallelDescriptor::second() - time1;
         if (ParallelDescriptor::IOProcessor())
             std::cout << std::setw(15) << " done. (" << total_time << " sec)" << std::endl;
@@ -432,7 +432,7 @@ do_analysis(const Real     omega_b,
           std::cout << std::setfill('=') << std::setw(46) << " Calculating rho_m PDF ... " << std::flush;
         time1 = ParallelDescriptor::second();
         #warning TODO: make rho_m PDF knobs run-time parameters
-        pdf (rho_m, geom, nStep, "rho_m", -3.0, 5.0, 200);
+        pdf (rho_m, geom, nStep, "rhom", -3.0, 5.0, 200);
         total_time = ParallelDescriptor::second() - time1;
         if (ParallelDescriptor::IOProcessor())
             std::cout << std::setw(15) << " done. (" << total_time << " sec)" << std::endl;
@@ -608,7 +608,7 @@ do_analysis(const Real     omega_b,
           std::cout << std::setfill('=') << std::setw(46) << " Calculating rho_m P(k)... " << std::flush;
         time1 = ParallelDescriptor::second();
         #warning TODO: make rho_m power spectrum knobs run-time parameters
-        ps3d (rho_m, geom, nStep, "rho_m", false, true);
+        ps3d (rho_m, geom, nStep, "rhom", false, true);
         total_time = ParallelDescriptor::second() - time1;
         if (ParallelDescriptor::IOProcessor())
             std::cout << std::setw(15) << " done. (" << total_time << " sec)" << std::endl;
@@ -646,7 +646,7 @@ do_analysis(const Real     omega_b,
           std::cout << std::setfill('=') << std::setw(46) << " Calculating abs_v PDF ... " << std::flush;
         time1 = ParallelDescriptor::second();
         #warning TODO: make abs_v PDF knobs run-time parameters
-        pdf (abs_v, geom, nStep, "abs_v", -2.0, 4.0, 200);
+        pdf (abs_v, geom, nStep, "velmag", -2.0, 4.0, 200);
         total_time = ParallelDescriptor::second() - time1;
         if (ParallelDescriptor::IOProcessor())
             std::cout << std::setw(15) << " done. (" << total_time << " sec)" << std::endl;
@@ -655,7 +655,7 @@ do_analysis(const Real     omega_b,
           std::cout << std::setfill('=') << std::setw(46) << " Calculating abs_v P(k)... " << std::flush;
         time1 = ParallelDescriptor::second();
         #warning TODO: make abs_v power spectrum knobs run-time parameters
-        ps3d(abs_v, geom, nStep, "abs_v");
+        ps3d(abs_v, geom, nStep, "velmag");
         total_time = ParallelDescriptor::second() - time1;
         if (ParallelDescriptor::IOProcessor())
             std::cout << std::setw(15) << " done. (" << total_time << " sec)" << std::endl;
@@ -691,7 +691,7 @@ do_analysis(const Real     omega_b,
           std::cout << std::setfill('=') << std::setw(46) << " Calculating abs_vz PDF ... " << std::flush;
         time1 = ParallelDescriptor::second();
         #warning TODO: make abs_vz PDF knobs run-time parameters
-        pdf (abs_vz, geom, nStep, "abs_vz", -2.0, 4.0, 200);
+        pdf (abs_vz, geom, nStep, "vz", -2.0, 4.0, 200);
         total_time = ParallelDescriptor::second() - time1;
         if (ParallelDescriptor::IOProcessor())
             std::cout << std::setw(15) << " done. (" << total_time << " sec)" << std::endl;
@@ -700,7 +700,7 @@ do_analysis(const Real     omega_b,
           std::cout << std::setfill('=') << std::setw(46) << " Calculating abs_vz P(k) ... " << std::flush;
         time1 = ParallelDescriptor::second();
         #warning TODO: make abs_vz power spectrum knobs run-time parameters
-        ps3d(abs_vz, geom, nStep, "abs_vz");
+        ps3d(abs_vz, geom, nStep, "vz");
         total_time = ParallelDescriptor::second() - time1;
         if (ParallelDescriptor::IOProcessor())
             std::cout << std::setw(15) << " done. (" << total_time << " sec)" << std::endl;
@@ -738,7 +738,7 @@ do_analysis(const Real     omega_b,
           std::cout << std::setfill('=') << std::setw(46) << " Calculating n_hi PDF ... " << std::flush;
         time1 = ParallelDescriptor::second();
         #warning TODO: make n_hi PDF knobs run-time parameters
-        pdf (n_hi, geom, nStep, "n_hi", -13.0, -5.0, 200);
+        pdf (n_hi, geom, nStep, "nhi", -13.0, -5.0, 200);
         total_time = ParallelDescriptor::second() - time1;
         if (ParallelDescriptor::IOProcessor())
             std::cout << std::setw(15) << " done. (" << total_time << " sec)" << std::endl;
@@ -747,7 +747,7 @@ do_analysis(const Real     omega_b,
           std::cout << std::setfill('=') << std::setw(46) << " Calculating n_hi P(k) ... " << std::flush;
         time1 = ParallelDescriptor::second();
         #warning TODO: make n_hi power spectrum knobs run-time parameters
-        ps3d (n_hi, geom, nStep, "n_hi");
+        ps3d (n_hi, geom, nStep, "nhi");
         total_time = ParallelDescriptor::second() - time1;
         if (ParallelDescriptor::IOProcessor())
             std::cout << std::setw(15) << " done. (" << total_time << " sec)" << std::endl;
