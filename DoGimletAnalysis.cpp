@@ -64,14 +64,12 @@ BL_FORT_PROC_DECL(CALC_RHO_M, calc_rho_m) (
 BL_FORT_PROC_DECL(CALC_N_HI, calc_n_hi) (
     const Real* z,
     const Real* state_data,
-    const Real* eos_data,
     const Real* mean_density,
     const Real* omega_b,
     const Real* H_0,
     const int* lo,
     const int* hi,
     const int* state_ng,
-    const int* eos_ng,
     const int* n_hi_ng,
     const Real* n_hi);
 
@@ -712,21 +710,18 @@ do_analysis(const Real     omega_b,
         time1 = ParallelDescriptor::second();
         MultiFab n_hi(state_data.boxArray(), 1, 0);
         const int state_num_ghosts = state_data.nGrow();
-        const int eos_num_ghosts = eos_data.nGrow();
         const int n_hi_num_ghosts = n_hi.nGrow();
         for (MFIter mfi(n_hi); mfi.isValid(); ++mfi) {
           const Box& bx = mfi.validbox();
           BL_FORT_PROC_CALL(CALC_N_HI, calc_n_hi) (
             &z,
             (state_data)[mfi].dataPtr(),
-            (eos_data)[mfi].dataPtr(),
             &mean_density,
             &omega_b,
             &H_0,
             bx.loVect(),
             bx.hiVect(),
             &state_num_ghosts,
-            &eos_num_ghosts,
             &n_hi_num_ghosts,
             (n_hi)[mfi].dataPtr());
         }

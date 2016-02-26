@@ -1,21 +1,17 @@
 ! Calculate H I density using the Nyx EOS.
 
-subroutine calc_n_hi(z, state_data, eos_data, mean_density, omega_b, h_0, lo, hi, state_ng, eos_ng, n_hi_ng, n_hi)
+subroutine calc_n_hi(z, state_data, mean_density, omega_b, h_0, lo, hi, state_ng, n_hi_ng, n_hi)
   use, intrinsic :: iso_c_binding
   use meth_params_module, only: NVAR, UEINT, URHO
   use eos_module, only: nyx_eos_nh0_and_nhep
   use fundamental_constants_module, only: e_to_cgs
   implicit none
 
-  integer(c_int), intent(in) :: lo(3), hi(3), state_ng, eos_ng, n_hi_ng
+  integer(c_int), intent(in) :: lo(3), hi(3), state_ng, n_hi_ng
   real(c_double), intent(in) :: z, mean_density, omega_b, h_0
   real(c_double), intent(in) :: state_data (lo(1)-state_ng:hi(1)+state_ng, &
                                             lo(2)-state_ng:hi(2)+state_ng, &
                                             lo(3)-state_ng:hi(3)+state_ng, NVAR)
-    ! I guess we always hard-code the # of EOS components as 2?
-  real(c_double), intent(in) :: eos_data (lo(1)-eos_ng:hi(1)+eos_ng, &
-                                          lo(2)-eos_ng:hi(2)+eos_ng, &
-                                          lo(3)-eos_ng:hi(3)+eos_ng, 2)
 
   real(c_double), intent(out) :: n_hi (lo(1)-n_hi_ng:hi(1)+n_hi_ng, &
                                        lo(2)-n_hi_ng:hi(2)+n_hi_ng, &
