@@ -556,13 +556,25 @@ void postprocess_tau_fields(MultiFab& tau, const Geometry &geom, const int dir, 
         for (unsigned int i = 0; i < k_num_bins; ++i) {
             for (unsigned int j = 0; j < mu_num_bins; ++j) {
                 unsigned int k_mu_index = i*mu_num_bins + j;
-                k_mu_power_spectrum_file << std::setw(25) << k_bin_edges[i]
-                                    << std::setw(25) << mu_bin_edges[j]
-                                    << std::setw(15) << k_bin_count[k_mu_index]
-                                    << std::setw(25) << k_bin_power_weighted_k_sum[k_mu_index]/k_bin_power_sum[k_mu_index]
-                                    << std::setw(25) << k_bin_power_weighted_mu_sum[k_mu_index]/k_bin_power_sum[k_mu_index]
-                                    << std::setw(15) << k_bin_power_sum[k_mu_index]/Real(k_bin_count[k_mu_index])
-                                    << std::endl;
+                if (k_bin_power_sum[k_mu_index] > 0.0 && k_bin_count[k_mu_index] > 0) {
+                  k_mu_power_spectrum_file << std::setw(25) << k_bin_edges[i]
+                                      << std::setw(25) << mu_bin_edges[j]
+                                      << std::setw(15) << k_bin_count[k_mu_index]
+                                      << std::setw(25) << k_bin_power_weighted_k_sum[k_mu_index]/k_bin_power_sum[k_mu_index]
+                                      << std::setw(25) << k_bin_power_weighted_mu_sum[k_mu_index]/k_bin_power_sum[k_mu_index]
+                                      << std::setw(15) << k_bin_power_sum[k_mu_index]/Real(k_bin_count[k_mu_index])
+                                      << std::endl;
+                } else {
+                  if (k_bin_power_sum[k_mu_index] <= 0.0) {
+                    if (ParallelDescriptor::IOProcessor) {
+                      std::cerr << "WARNING: k_bin_power_sum <= 0.0; skipping entry in P(k,mu) ..." << std::endl;
+                    }
+                  } else if (k_bin_count[k_mu_index] <= 0) {
+                    if (ParallelDescriptor::IOProcessor) {
+                      std::cerr << "WARNING: k_bin_count <= 0; skipping entry in P(k,mu) ..." << std::endl;
+                    }
+                  }
+                }
             }
         }
         k_mu_power_spectrum_file.close();
