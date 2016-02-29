@@ -1,32 +1,39 @@
 ! Calculate optical depth of a scalar field divided into pencils pointing along a particular axis.
 
-subroutine calc_tau (state_data, eos_data, mom, &
+subroutine calc_tau (density, temperature, e_int, mom, &
                      lo, hi, ng_mom, ng_state, ng_eos, ng_tau, mean_density, dx, dir, z, domain_length, omega_m, omega_l, omega_b, &
                      h_0, tau)
 
     use, intrinsic :: iso_c_binding
-    use meth_params_module, only: NVAR, UEINT, URHO, TEMP_COMP
+    use meth_params_module, only: gamma_minus_1
     use eos_module, only: nyx_eos_nh0_and_nhep
     use fundamental_constants_module, only: e_to_cgs, density_to_cgs
     use atomic_rates_module, only: interp_to_this_z
     implicit none
 
     integer(c_int), intent(in) :: lo(3), hi(3), ng_mom, ng_state, ng_eos, ng_tau, dir
-    real(c_double), intent(in), target :: state_data (lo(1)-ng_state:hi(1)+ng_state, &
-                                                      lo(2)-ng_state:hi(2)+ng_state, &
-                                                      lo(3)-ng_state:hi(3)+ng_state, NVAR)
-    ! I guess we always hard-code the # of EOS components as 2?
-    real(c_double), intent(in), target :: eos_data   (lo(1)-ng_eos:hi(1)+ng_eos, &
-                                                      lo(2)-ng_eos:hi(2)+ng_eos, &
-                                                      lo(3)-ng_eos:hi(3)+ng_eos, 2)
-    real(c_double), intent(in), target :: mom        (lo(1)-ng_mom:hi(1)+ng_mom, &
-                                                      lo(2)-ng_mom:hi(2)+ng_mom, &
-                                                      lo(3)-ng_mom:hi(3)+ng_mom, 1)
+
+    real(c_double), intent(in), target :: density (lo(1)-ng_state:hi(1)+ng_state, &
+                                                   lo(2)-ng_state:hi(2)+ng_state, &
+                                                   lo(3)-ng_state:hi(3)+ng_state)
+
+    real(c_double), intent(in), target :: temperature (lo(1)-ng_eos:hi(1)+ng_eos, &
+                                                       lo(2)-ng_eos:hi(2)+ng_eos, &
+                                                       lo(3)-ng_eos:hi(3)+ng_eos)
+
+    real(c_double), intent(in), target :: e_int (lo(1)-ng_state:hi(1)+ng_state, &
+                                                 lo(2)-ng_state:hi(2)+ng_state, &
+                                                 lo(3)-ng_state:hi(3)+ng_state)
+
+    real(c_double), intent(in), target :: mom (lo(1)-ng_mom:hi(1)+ng_mom, &
+                                               lo(2)-ng_mom:hi(2)+ng_mom, &
+                                               lo(3)-ng_mom:hi(3)+ng_mom)
+
     real(c_double), intent(in) :: mean_density, dx, z, domain_length, omega_m, omega_l, omega_b, h_0
 
     real(c_double), intent(out), target :: tau (lo(1)-ng_tau:hi(1)+ng_tau, &
                                                 lo(2)-ng_tau:hi(2)+ng_tau, &
-                                                lo(3)-ng_tau:hi(3)+ng_tau, 1)
+                                                lo(3)-ng_tau:hi(3)+ng_tau)
 
     real(c_double), pointer :: tau_pencil (:)
 
@@ -82,7 +89,7 @@ subroutine calc_tau (state_data, eos_data, mom, &
 
     real(c_double) :: cell_density_cgs
     real(c_double) :: rho_b_cgs
-    real(c_double) :: e_int
+    real(c_double) :: e_int_cell
     real(c_double) :: cell_nhep
 
     integer(c_int) :: ipix_lo
@@ -112,25 +119,25 @@ subroutine calc_tau (state_data, eos_data, mom, &
 
     ! Pencils point in x-direction.
     if (dir == 0) then
-      density_pencil => state_data (lo(1):hi(1), lo(2), lo(3), URHO     )
-      e_int_pencil   => state_data (lo(1):hi(1), lo(2), lo(3), UEINT    )
-      temp_pencil    => eos_data   (lo(1):hi(1), lo(2), lo(3), TEMP_COMP)
-      mom_pencil     => mom        (lo(1):hi(1), lo(2), lo(3), 1        )
-      tau_pencil     => tau        (lo(1):hi(1), lo(2), lo(3), 1        )
+      density_pencil => density     (lo(1):hi(1), lo(2), lo(3))
+      e_int_pencil   => e_int       (lo(1):hi(1), lo(2), lo(3))
+      temp_pencil    => temperature (lo(1):hi(1), lo(2), lo(3))
+      mom_pencil     => mom         (lo(1):hi(1), lo(2), lo(3))
+      tau_pencil     => tau         (lo(1):hi(1), lo(2), lo(3))
     ! Pencils point in y-direction.
     else if (dir == 1) then
-      density_pencil => state_data (lo(1), lo(2):hi(2), lo(3), URHO     )
-      e_int_pencil   => state_data (lo(1), lo(2):hi(2), lo(3), UEINT    )
-      temp_pencil    => eos_data   (lo(1), lo(2):hi(2), lo(3), TEMP_COMP)
-      mom_pencil     => mom        (lo(1), lo(2):hi(2), lo(3), 1        )
-      tau_pencil     => tau        (lo(1), lo(2):hi(2), lo(3), 1        )
+      density_pencil => density     (lo(1), lo(2):hi(2), lo(3))
+      e_int_pencil   => e_int       (lo(1), lo(2):hi(2), lo(3))
+      temp_pencil    => temperature (lo(1), lo(2):hi(2), lo(3))
+      mom_pencil     => mom         (lo(1), lo(2):hi(2), lo(3))
+      tau_pencil     => tau         (lo(1), lo(2):hi(2), lo(3))
     ! Pencils point in z-direction.
     else if (dir == 2) then
-      density_pencil => state_data (lo(1), lo(2), lo(3):hi(3), URHO     )
-      e_int_pencil   => state_data (lo(1), lo(2), lo(3):hi(3), UEINT    )
-      temp_pencil    => eos_data   (lo(1), lo(2), lo(3):hi(3), TEMP_COMP)
-      mom_pencil     => mom        (lo(1), lo(2), lo(3):hi(3), 1        )
-      tau_pencil     => tau        (lo(1), lo(2), lo(3):hi(3), 1        )
+      density_pencil => density     (lo(1), lo(2), lo(3):hi(3))
+      e_int_pencil   => e_int       (lo(1), lo(2), lo(3):hi(3))
+      temp_pencil    => temperature (lo(1), lo(2), lo(3):hi(3))
+      mom_pencil     => mom         (lo(1), lo(2), lo(3):hi(3))
+      tau_pencil     => tau         (lo(1), lo(2), lo(3):hi(3))
     end if
 
     cell_v_size = domain_velocity_size / real(size(tau_pencil), c_double)
@@ -149,12 +156,12 @@ subroutine calc_tau (state_data, eos_data, mom, &
     do i = lbound(tau_pencil, 1), ubound(tau_pencil, 1)
 
       cell_rho = density_pencil(i)
-      e_int = e_int_pencil(i) / cell_rho
+      e_int_cell = e_int_pencil(i) / cell_rho
 
       rho_eos_units = cell_rho * omega_b * h*h * rho_crit_100_cgs / (a3 * mean_density)
 
       ! Get H and He densities from the EOS.
-      call nyx_eos_nh0_and_nhep(z, rho_eos_units, e_int*e_to_cgs, cell_nhi, cell_nhep)
+      call nyx_eos_nh0_and_nhep(z, rho_eos_units, e_int_cell*e_to_cgs, cell_nhi, cell_nhep)
 
       cell_vlos = mom_pencil(i) / density_pencil(i) * 1.0e5
 

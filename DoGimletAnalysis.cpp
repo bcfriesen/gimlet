@@ -27,8 +27,9 @@
 #include <MakeFFTWBoxes.H>
 
 BL_FORT_PROC_DECL(CALC_TAU, calc_tau) (
-   const Real *state_data,
-   const Real *eos_data,
+   const Real *density,
+   const Real *temperature,
+   const Real *e_int,
    const Real *mom,
    const int  *lo,
    const int  *hi,
@@ -63,7 +64,8 @@ BL_FORT_PROC_DECL(CALC_RHO_M, calc_rho_m) (
 
 BL_FORT_PROC_DECL(CALC_N_HI, calc_n_hi) (
     const Real* z,
-    const Real* state_data,
+    const Real* density,
+    const Real* e_int,
     const Real* mean_density,
     const Real* omega_b,
     const Real* H_0,
@@ -131,8 +133,9 @@ do_analysis(const Real     omega_b,
             const Real     omega_l,
             const Real     h,
             const Real     comoving_a,
-            const MultiFab &state_data,
-            const MultiFab &eos_data,
+            const MultiFab &density,
+            const MultiFab &temperature,
+            const MultiFab &e_int,
             const MultiFab &dm_density,
             const MultiFab &xmom,
             const MultiFab &ymom,
@@ -142,10 +145,6 @@ do_analysis(const Real     omega_b,
 {
 
     const Real z = (1.0/comoving_a) - 1.0;
-
-#warning TODO: FIX HARD-CODED STATE DATA COMPONENT NUMBERS
-        const unsigned int DENSITY_COMP = 0;
-        const unsigned int TEMPERATURE_COMP = 0;
 
     if (ParallelDescriptor::IOProcessor()) {
         // Undo the effects of std::scientific, since these numbers are usually
@@ -167,11 +166,11 @@ do_analysis(const Real     omega_b,
     const Box& problem_domain = geom.Domain();
     const long num_cells = problem_domain.numPts();
 
-    const Real mean_density = state_data.norm1(DENSITY_COMP) / Real(num_cells);
+    const Real mean_density = density.norm1() / Real(num_cells);
     if (ParallelDescriptor::IOProcessor())
         std::cout << "===== Mean baryon density = " << std::scientific << mean_density << " Msun/Mpc^3" << std::endl;
 
-    const BoxArray& ba1 = state_data.boxArray();
+    const BoxArray& ba1 = density.boxArray();
 
     /* Every box will be a one-cell-thick pencil. We will trace rays in all 3
      * dimensions, so we will re-grid 3 times. The boxes will be (long) x 1 x 1
@@ -190,8 +189,9 @@ do_analysis(const Real     omega_b,
         BoxList box_list = MakePencilBoxes(geom, dir);
         BoxArray ba(box_list);
 
-        MultiFab eos_data_pencils (ba, eos_data.nComp(), eos_data.nGrow());
-        MultiFab state_data_pencils (ba, state_data.nComp(), state_data.nGrow());
+        MultiFab density_pencils     (ba,     density.nComp(),     density.nGrow());
+        MultiFab temperature_pencils (ba, temperature.nComp(), temperature.nGrow());
+        MultiFab e_int_pencils       (ba,       e_int.nComp(),       e_int.nGrow());
 
         int num_ghosts_mom;
         if (dir == 0) {
@@ -201,14 +201,14 @@ do_analysis(const Real     omega_b,
         } else if (dir == 2){
             num_ghosts_mom = zmom.nGrow();
         }
-        const int num_ghosts_state_data = state_data.nGrow();
-        const int num_ghosts_eos_data = eos_data.nGrow();
+        const int num_ghosts_state_data =     density.nGrow();
+        const int num_ghosts_eos_data   = temperature.nGrow();
 
         MultiFab mom_pencils (ba, 1, num_ghosts_mom);
 
-#warning TODO: just copy pencils of state/EOS data that we need, not the whole set
-        state_data_pencils.copy(state_data);
-        eos_data_pencils.copy(eos_data);
+        density_pencils.copy(density);
+        temperature_pencils.copy(temperature);
+        e_int_pencils.copy(e_int);
         if (dir == 0) {
             mom_pencils.copy(xmom);
         } else if (dir == 1) {
@@ -233,11 +233,12 @@ do_analysis(const Real     omega_b,
           std::cout << std::setfill('=') << std::setw(46) << " Calculating optical depth ... " << std::flush;
 
         time1 = ParallelDescriptor::second();
-        for (MFIter mfi(state_data_pencils); mfi.isValid(); ++mfi) {
+        for (MFIter mfi(density_pencils); mfi.isValid(); ++mfi) {
           const Box& bx = mfi.validbox();
           BL_FORT_PROC_CALL(CALC_TAU, calc_tau)
-              ((state_data_pencils)[mfi].dataPtr(),
-              (eos_data_pencils)[mfi].dataPtr(),
+              ((density_pencils)[mfi].dataPtr(),
+              (temperature_pencils)[mfi].dataPtr(),
+              (e_int_pencils)[mfi].dataPtr(),
               (mom_pencils)[mfi].dataPtr(),
               bx.loVect(),
               bx.hiVect(),
@@ -283,9 +284,7 @@ do_analysis(const Real     omega_b,
             std::cout << std::endl << std::setfill('=') << std::setw(46) << " Loading rho_b data ... " << std::flush;
         time1 = ParallelDescriptor::second();
         // Density PDF and power spectrum need to be in mean units
-        MultiFab density(ba1, 1, 0);
-        density.copy(state_data, DENSITY_COMP, 0, 1);
-        const Real mean_density= density.norm1() / Real(num_cells);
+        const Real mean_density = density.norm1() / Real(num_cells);
         MultiFab density_divided_by_mean(density.boxArray(), 1, 0);
         density_divided_by_mean.copy(density);
         density_divided_by_mean.mult(1.0/mean_density);
@@ -314,15 +313,6 @@ do_analysis(const Real     omega_b,
 
     {
         if (ParallelDescriptor::IOProcessor())
-            std::cout << std::endl << std::setfill('=') << std::setw(46) << " Loading T data ... " << std::flush;
-        time1 = ParallelDescriptor::second();
-        MultiFab temperature(ba1, 1, 0);
-        temperature.copy(eos_data, TEMPERATURE_COMP, 0, 1);
-        total_time = ParallelDescriptor::second() - time1;
-        if (ParallelDescriptor::IOProcessor())
-          std::cout << std::setw(15) << " done. (" << total_time << " sec)" << std::endl;
-
-        if (ParallelDescriptor::IOProcessor())
           std::cout << std::setfill('=') << std::setw(46) << " Calculating T PDF ... " << std::flush;
         #warning TODO: make temperature PDF knobs run-time parameters
         time1 = ParallelDescriptor::second();
@@ -342,18 +332,7 @@ do_analysis(const Real     omega_b,
     }
 
     {
-        if (ParallelDescriptor::IOProcessor())
-            std::cout << std::endl << std::setfill('=') << std::setw(46) << " Loading T-rho_b data ... " << std::flush;
-        time1 = ParallelDescriptor::second();
-        MultiFab density(ba1, 1, 0);
-        density.copy(state_data, DENSITY_COMP, 0, 1);
-        MultiFab temperature(ba1, 1, 0);
-        temperature.copy(eos_data, TEMPERATURE_COMP, 0, 1);
         const Real mean_density = density.norm1() / Real(num_cells);
-        total_time = ParallelDescriptor::second() - time1;
-        if (ParallelDescriptor::IOProcessor())
-            std::cout << std::setw(15) << " done. (" << total_time << " sec)" << std::endl;
-
         if (ParallelDescriptor::IOProcessor())
           std::cout << std::setfill('=') << std::setw(46) << " Calculating T-rho_b 2-D PDF ... " << std::flush;
         #warning TODO: make temperature PDF knobs run-time parameters
@@ -399,8 +378,6 @@ do_analysis(const Real     omega_b,
         if (ParallelDescriptor::IOProcessor())
             std::cout << std::endl << std::setfill('=') << std::setw(46) << " Loading rho_m data ... " << std::flush;
         time1 = ParallelDescriptor::second();
-        MultiFab density(ba1, 1, 0);
-        density.copy(state_data, DENSITY_COMP, 0, 1);
         MultiFab rho_m (ba1, 1, 0);
         const int density_num_ghosts = density.nGrow();
         const int dm_density_num_ghosts = dm_density.nGrow();
@@ -570,9 +547,6 @@ do_analysis(const Real     omega_b,
         // Set matter overdensity using cosmological parameters. First get rho_m in
         // terms of mean units.
 
-        MultiFab density(ba1, 1, 0);
-        density.copy(state_data, DENSITY_COMP, 0, 1);
-
         const int density_num_ghosts = density.nGrow();
         const int rho_dm_num_ghosts = rho_dm_cic_deconvolved_real_regular_ba.nGrow();
         const long num_cells = problem_domain.numPts();
@@ -616,8 +590,6 @@ do_analysis(const Real     omega_b,
         if (ParallelDescriptor::IOProcessor())
             std::cout << std::endl << std::setfill('=') << std::setw(46) << " Loading abs_v data ... " << std::flush;
         time1 = ParallelDescriptor::second();
-        MultiFab density(ba1, 1, 0);
-        density.copy(state_data, DENSITY_COMP, 0, 1);
 
         MultiFab abs_v(xmom.boxArray(), 1, 0);
         const int mom_num_ghosts = xmom.nGrow();
@@ -663,8 +635,6 @@ do_analysis(const Real     omega_b,
         if (ParallelDescriptor::IOProcessor())
             std::cout << std::endl << std::setfill('=') << std::setw(46) << " Loading abs_vz data ... " << std::flush;
         time1 = ParallelDescriptor::second();
-        MultiFab density(ba1, 1, 0);
-        density.copy(state_data, DENSITY_COMP, 0, 1);
         MultiFab abs_vz(zmom.boxArray(), 1, 0);
         const int zmom_num_ghosts = zmom.nGrow();
         const int density_num_ghosts = density.nGrow();
@@ -708,14 +678,15 @@ do_analysis(const Real     omega_b,
         if (ParallelDescriptor::IOProcessor())
             std::cout << std::endl << std::setfill('=') << std::setw(46) << " Loading n_hi data ... " << std::flush;
         time1 = ParallelDescriptor::second();
-        MultiFab n_hi(state_data.boxArray(), 1, 0);
-        const int state_num_ghosts = state_data.nGrow();
+        MultiFab n_hi(density.boxArray(), 1, 0);
+        const int state_num_ghosts = density.nGrow();
         const int n_hi_num_ghosts = n_hi.nGrow();
         for (MFIter mfi(n_hi); mfi.isValid(); ++mfi) {
           const Box& bx = mfi.validbox();
           BL_FORT_PROC_CALL(CALC_N_HI, calc_n_hi) (
             &z,
-            (state_data)[mfi].dataPtr(),
+            (density)[mfi].dataPtr(),
+            (e_int)[mfi].dataPtr(),
             &mean_density,
             &omega_b,
             &H_0,
