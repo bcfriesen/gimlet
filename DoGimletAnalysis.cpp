@@ -180,12 +180,14 @@ do_analysis(const Real     omega_b,
 
     const Real H_0 = h*100.0;
 
+    Real time1, total_time;
+
     for (int dir = 0; dir < BL_SPACEDIM; ++dir)
     {
         if (ParallelDescriptor::IOProcessor())
           std::cout << std::setfill('=') << std::setw(40) << " Copying data to pencils in dir = " << dir << " ... " << std::flush;
 
-        Real time1 = ParallelDescriptor::second();
+        time1 = ParallelDescriptor::second();
         BoxList box_list = MakePencilBoxes(geom, dir);
         BoxArray ba(box_list);
 
@@ -217,7 +219,7 @@ do_analysis(const Real     omega_b,
             mom_pencils.copy(zmom);
         }
 
-        Real total_time = ParallelDescriptor::second() - time1;
+        total_time = ParallelDescriptor::second() - time1;
         if (ParallelDescriptor::IOProcessor())
           std::cout << std::setw(15) << " done. (" << total_time << " sec)" << std::endl;
 
@@ -278,7 +280,6 @@ do_analysis(const Real     omega_b,
     // we're done with them. Otherwise they linger until the end of the
     // analysis routine, which can make its memory footprint very large.
 
-    Real time1, total_time;
     {
         if (ParallelDescriptor::IOProcessor())
             std::cout << std::endl << std::setfill('=') << std::setw(46) << " Loading rho_b data ... " << std::flush;
