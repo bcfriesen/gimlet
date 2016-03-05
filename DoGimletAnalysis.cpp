@@ -269,7 +269,7 @@ do_analysis(const Real     omega_b,
           std::cout << std::setw(15) << " done. (" << total_time << " sec)" << std::endl;
 
         // Copy pencil data back to normally shaped boxes so other
-        // post-processing tasks (which don't depend on pencils) will go
+        // post-processing tasks (which don't require the pencil shape) will go
         // faster.
         MultiFab tau_redshift_space(ba1, 1, num_ghosts_tau);
         tau_redshift_space.copy(tau_redshift_space_pencils);
