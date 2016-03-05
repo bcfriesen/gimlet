@@ -234,6 +234,10 @@ do_analysis(const Real     omega_b,
         if (ParallelDescriptor::IOProcessor())
           std::cout << std::setfill('=') << std::setw(46) << " Calculating optical depth ... " << std::flush;
 
+        // We can't tile this MFIter loop because the optical depth calculation
+        // requires the Boxes to be exactly 1 x 1 x (long). If we divide them
+        // into smaller tiles we get nonsense results.
+
         time1 = ParallelDescriptor::second();
         for (MFIter mfi(density_pencils); mfi.isValid(); ++mfi) {
           const Box& bx = mfi.validbox();
