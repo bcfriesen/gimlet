@@ -455,7 +455,7 @@ do_analysis(const Real     omega_b,
         const int* const domain_size_int = domain_size_IV.getVect();
         const Real dx = (geom.ProbHi(0) - geom.ProbLo(0)) / Real(domain.length(0));
 
-        DistributionMapping dm(ba1, ParallelDescriptor::NProcs());
+        DistributionMapping dm(ba1, nprocs);
 
         // Get list of processes that own Boxes.
         int I_have_boxes = 0;
@@ -463,10 +463,10 @@ do_analysis(const Real     omega_b,
           I_have_boxes++;
           break;
         }
-        Array<int> proc_box_count(ParallelDescriptor::NProcs());
+        Array<int> proc_box_count(nprocs);
         MPI_Allgather(&I_have_boxes, 1, MPI_INT, &proc_box_count[0], 1, MPI_INT, ParallelDescriptor::Communicator());
         Array<int> procs_with_boxes;
-        for (unsigned int i = 0; i < ParallelDescriptor::NProcs(); ++i) {
+        for (unsigned int i = 0; i < nprocs; ++i) {
           if (proc_box_count[i] > 0) procs_with_boxes.push_back(i);
         }
         MPI_Group parent_group;
