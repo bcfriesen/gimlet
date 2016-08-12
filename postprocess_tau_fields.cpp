@@ -566,11 +566,11 @@ void postprocess_tau_fields(MultiFab& tau, const Geometry &geom, const int dir, 
                                       << std::endl;
                 } else {
                   if (k_bin_power_sum[k_mu_index] <= 0.0) {
-                    if (ParallelDescriptor::IOProcessor) {
+                    if (ParallelDescriptor::IOProcessor()) {
                       std::cerr << "WARNING: k_bin_power_sum <= 0.0; skipping entry in P(k,mu) ..." << std::endl;
                     }
                   } else if (k_bin_count[k_mu_index] <= 0) {
-                    if (ParallelDescriptor::IOProcessor) {
+                    if (ParallelDescriptor::IOProcessor()) {
                       std::cerr << "WARNING: k_bin_count <= 0; skipping entry in P(k,mu) ..." << std::endl;
                     }
                   }
