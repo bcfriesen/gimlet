@@ -24,3 +24,6 @@ Gimlet calculates a variety of quantities:
  - probability distribution functions of different fields (optical depths,
    fluxes, density, temperature, etc.)
  - Lyman-alpha fluxes
+
+[1] Friesen, B., et al. "In situ and in-transit analysis of cosmological
+    simulations." Computational Astrophysics and Cosmology, submitted.
