@@ -1,14 +1,26 @@
-Herein lies a rewrite of Casey Stark's Nyx post-processing suite "gimlet". In
-particular, rather than converting BoxLib plotfiles to HDF5 and then operating
-on HDF5 files to do the post-processing, gimlet now runs entirely in memory, in
-general taking as arguments one or more MultiFabs, and perhaps other auxiliary
-data such as a Geometry. As a result, it can run either "in situ" or
-"in-transit". Running "in situ" means that after a prescribed number of time
-steps, Nyx halts the simulation and runs gimlet on the data in memory (without
-needing to convert plotfiles, or write them at all). Running "in-transit" means
-the data is sent to a separate partition of compute cores (currently we do this
-via MPI), which then run gimlet while the remainder of the cores continue on
-with the Nyx simulation.
+This is Gimlet, a rewrite of Casey Stark's Nyx post-processing suite of the
+same name. In its original form, Gimlet was a disk-based post-processing tool;
+it converted BoxLib plot files into a custom HDF5 format, and then ran a series
+of algorithms on this new file to generate a set of highly reduced data such as
+probability distribution functions and power spectra.
 
-The EOS included here is the one which came with gimlet originally. It is
-mostly copied from the EOS in Nyx itself.
+In its new form, Gimlet now does all post-processing while the data resides in
+memory, obviating the need for HDF5 (or even for saving the plot files at all).
+It operates on standard BoxLib data structures: MultiFab, Geometry, etc.
+Furthermore, Gimlet can run as part of an arbitrarily complex workflow which
+executes either in situ or in-transit. When running in situ, all MPI processes
+which are evolving the simulation stop and run Gimlet together before
+continuing on. When running in-transit, we spawn a disjoint set of MPI
+processes ("sidecars") which receive the data and post-process asynchronously
+with respect to the "compute" group of MPI processes, which continue with
+simulation evolution as soon as they have sent the necessary data to the
+sidecars. Both in situ and in-transit approaches have advantages and
+disadvantages, which are discussed in [1].
+
+Gimlet calculates a variety of quantities:
+ - optical depths along 1-D pencils aligned parallel to all 3 axes
+ - 1-D line-of-sight power spectra P(k) along pencils
+ - 3-D power spectra P(k,mu)
+ - probability distribution functions of different fields (optical depths,
+   fluxes, density, temperature, etc.)
+ - Lyman-alpha fluxes
