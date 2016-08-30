@@ -114,8 +114,11 @@ void postprocess_tau_fields(MultiFab& tau, const Geometry &geom, const int dir, 
       std::cout << std::setfill('=') << std::setw(46) << " Calculating tau PDF ... " << std::flush;
 
     Real time1 = ParallelDescriptor::second();
-    for ( MFIter mfi(tau); mfi.isValid(); ++mfi ) {
-        const Box& bx = mfi.validbox();
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    for ( MFIter mfi(tau, true); mfi.isValid(); ++mfi ) {
+        const Box& bx = mfi.tilebox();
 
         // These are counts per *box*. We'll glob them all together after
         // iterating over all boxes.
@@ -132,10 +135,19 @@ void postprocess_tau_fields(MultiFab& tau, const Geometry &geom, const int dir, 
                 &bin_count_per_box[0],
                 &bin_x_sum_per_box[0]);
 
+        // My hacky way of doing array reductions without using OpenMP 4.0 to
+        // do user-defined reductions.
+
+#warning turn this critical section into a parallel reduction
+#ifdef _OPENMP
+#pragma omp critical
+#endif
+        {
         // Accumulate per-box results into per-process arrays
         for (unsigned int i = 0; i < tpdf_num_bins; ++i) {
              bin_count[i] += bin_count_per_box[i];
              bin_x_sum[i] += bin_x_sum_per_box[i];
+        }
         }
     }
 

@@ -234,12 +234,17 @@ do_analysis(const Real     omega_b,
         if (ParallelDescriptor::IOProcessor())
           std::cout << std::setfill('=') << std::setw(46) << " Calculating optical depth ... " << std::flush;
 
-        // We can't tile this MFIter loop because the optical depth calculation
-        // requires the Boxes to be exactly 1 x 1 x (long). If we divide them
-        // into smaller tiles we get nonsense results.
+        IntVect pencil_tile_size;
+        if (dir == 0) {
+            pencil_tile_size = IntVect(D_DECL(65536, 1, 1));
+        } else if (dir == 1) {
+            pencil_tile_size = IntVect(D_DECL(1, 65536, 1));
+        } else if (dir == 2) {
+            pencil_tile_size = IntVect(D_DECL(1, 1, 65536));
+        }
 
         time1 = ParallelDescriptor::second();
-        for (MFIter mfi(density_pencils); mfi.isValid(); ++mfi) {
+        for (MFIter mfi(density_pencils, pencil_tile_size); mfi.isValid(); ++mfi) {
           const Box& bx = mfi.validbox();
           BL_FORT_PROC_CALL(CALC_TAU, calc_tau)
               ((density_pencils)[mfi].dataPtr(),
@@ -388,8 +393,11 @@ do_analysis(const Real     omega_b,
         const int dm_density_num_ghosts = dm_density.nGrow();
         const int rho_m_num_ghosts = rho_m.nGrow();
         const Real mean_dm_density = dm_density.norm1() / Real(num_cells);
-        for (MFIter mfi(dm_density); mfi.isValid(); ++mfi) {
-          const Box& bx = mfi.validbox();
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+        for (MFIter mfi(dm_density, true); mfi.isValid(); ++mfi) {
+          const Box& bx = mfi.tilebox();
           BL_FORT_PROC_CALL(CALC_RHO_M, calc_rho_m) (
             (density)[mfi].dataPtr(),
             (dm_density)[mfi].dataPtr(),
@@ -485,7 +493,9 @@ do_analysis(const Real     omega_b,
         MultiFab rho_dm_fft_out_imag(ba_fft, 1, 0, dm_one_box_per_process);
 
         // Do the DFT. Because every process has at most one Box (or zero),
-        // each process should iterate at most one time through this loop.
+        // each process should iterate at most one time through this loop. We
+        // won't tile this loop because FFTW has its own internal threading
+        // strategy.
         for (MFIter mfi(rho_dm_fft); mfi.isValid(); ++mfi) {
             const Box bx = mfi.validbox();
             BL_FORT_PROC_CALL(FFT_3D, fft_3d) (
@@ -504,8 +514,11 @@ do_analysis(const Real     omega_b,
         const Box& problem_domain = geom.Domain();
         Array<int> domain_size(3);
         for (unsigned int i = 0; i < 3; ++i) domain_size[i] = problem_domain.length(i);
-        for (MFIter mfi(rho_dm_fft_out_real); mfi.isValid(); ++mfi) {
-            const Box& bx = mfi.validbox();
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+        for (MFIter mfi(rho_dm_fft_out_real, true); mfi.isValid(); ++mfi) {
+            const Box& bx = mfi.tilebox();
             BL_FORT_PROC_CALL(CIC_DECONVOLVE, cic_deconvolve) (
                 (rho_dm_fft_out_real)[mfi].dataPtr(),
                 (rho_dm_fft_out_imag)[mfi].dataPtr(),
@@ -520,6 +533,9 @@ do_analysis(const Real     omega_b,
 
         MultiFab rho_dm_cic_deconvolved_real(ba_fft, 1, 0, dm_one_box_per_process);
         MultiFab rho_dm_cic_deconvolved_imag(ba_fft, 1, 0, dm_one_box_per_process);
+
+        // We won't tile this loop because FFTW has its own internal threading
+        // strategy.
 
         for (MFIter mfi(rho_dm_fft_out_real); mfi.isValid(); ++mfi) {
             const Box bx = mfi.validbox();
@@ -559,8 +575,11 @@ do_analysis(const Real     omega_b,
         const Real mean_rho_dm = dm_density.norm1() / Real(num_cells);
         MultiFab rho_m(ba1, 1, 0);
         const int rho_m_num_ghosts = rho_m.nGrow();
-        for (MFIter mfi(density); mfi.isValid(); ++mfi) {
-            const Box& bx = mfi.validbox();
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+        for (MFIter mfi(density, true); mfi.isValid(); ++mfi) {
+            const Box& bx = mfi.tilebox();
             BL_FORT_PROC_CALL(CALC_RHO_M, calc_rho_m) (
               (density)[mfi].dataPtr(),
               (rho_dm_cic_deconvolved_real_regular_ba)[mfi].dataPtr(),
@@ -600,8 +619,11 @@ do_analysis(const Real     omega_b,
         const int mom_num_ghosts = xmom.nGrow();
         const int density_num_ghosts = density.nGrow();
 
-        for (MFIter mfi(xmom); mfi.isValid(); ++mfi) {
-            const Box& bx = mfi.validbox();
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+        for (MFIter mfi(xmom, true); mfi.isValid(); ++mfi) {
+            const Box& bx = mfi.tilebox();
             BL_FORT_PROC_CALL(CALC_ABS_V, calc_abs_v) (
               (xmom)[mfi].dataPtr(),
               (ymom)[mfi].dataPtr(),
@@ -644,8 +666,11 @@ do_analysis(const Real     omega_b,
         const int zmom_num_ghosts = zmom.nGrow();
         const int density_num_ghosts = density.nGrow();
         const int vz_num_ghosts = abs_vz.nGrow();
-        for (MFIter mfi(zmom); mfi.isValid(); ++mfi) {
-            const Box& bx = mfi.validbox();
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+        for (MFIter mfi(zmom, true); mfi.isValid(); ++mfi) {
+            const Box& bx = mfi.tilebox();
             BL_FORT_PROC_CALL(CALC_ABS_VZ, calc_abs_vz) (
                 (zmom)[mfi].dataPtr(),
                 (density)[mfi].dataPtr(),
@@ -686,8 +711,11 @@ do_analysis(const Real     omega_b,
         MultiFab n_hi(density.boxArray(), 1, 0);
         const int state_num_ghosts = density.nGrow();
         const int n_hi_num_ghosts = n_hi.nGrow();
-        for (MFIter mfi(n_hi); mfi.isValid(); ++mfi) {
-          const Box& bx = mfi.validbox();
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+        for (MFIter mfi(n_hi, true); mfi.isValid(); ++mfi) {
+          const Box& bx = mfi.tilebox();
           BL_FORT_PROC_CALL(CALC_N_HI, calc_n_hi) (
             &z,
             (density)[mfi].dataPtr(),
