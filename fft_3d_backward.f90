@@ -11,7 +11,7 @@ subroutine fft_3d_backward (mf_fft_in_real, mf_fft_in_imag, lo, hi, domain_size,
     real(c_double), intent(in) :: mf_fft_in_real (lo(1):hi(1), lo(2):hi(2), lo(3):hi(3), 1)
     real(c_double), intent(in) :: mf_fft_in_imag (lo(1):hi(1), lo(2):hi(2), lo(3):hi(3), 1)
     real(c_double), intent(in) :: dx
-    integer, intent(inout) :: threads_ok
+    integer, intent(in) :: threads_ok
 
     real(c_double), intent(out) :: mf_fft_out_real(lo(1):hi(1), lo(2):hi(2), lo(3):hi(3), 1)
     real(c_double), intent(out) :: mf_fft_out_imag(lo(1):hi(1), lo(2):hi(2), lo(3):hi(3), 1)
@@ -23,9 +23,6 @@ subroutine fft_3d_backward (mf_fft_in_real, mf_fft_in_imag, lo, hi, domain_size,
     integer(c_int) :: cmplx_i, cmplx_j, cmplx_k
     integer(c_int) :: i, j, k
     real(c_double) :: grid_volume
-
-    ! Use threaded FFTW if thread support in MPI is available.
-    if (threads_ok /= 0) threads_ok = fftw_init_threads()
 
     ! Since every process should have exactly 1 box, we won't need to
     ! make repeated calls to these init() functions.
@@ -86,7 +83,6 @@ subroutine fft_3d_backward (mf_fft_in_real, mf_fft_in_imag, lo, hi, domain_size,
     mf_fft_out_real (:, :, :, 1) = mf_fft_out_real (:, :, :, 1) / grid_volume
     mf_fft_out_imag (:, :, :, 1) = mf_fft_out_imag (:, :, :, 1) / grid_volume
 
-    if (threads_ok /= 0) call fftw_cleanup_threads()
     call fftw_mpi_cleanup()
 
 end subroutine fft_3d_backward

@@ -25,6 +25,7 @@
 #include <ps3d.H>
 #include <temperature_density_pdf2d.H>
 #include <MakeFFTWBoxes.H>
+#include <fftw3.h>
 
 BL_FORT_PROC_DECL(CALC_TAU, calc_tau) (
    const Real *density,
@@ -316,6 +317,8 @@ do_analysis(const Real     omega_b,
         total_time = ParallelDescriptor::second() - time1;
         if (ParallelDescriptor::IOProcessor())
           std::cout << std::setw(15) << " done. (" << total_time << " sec)" << std::endl;
+
+        int threads_ok = fftw_init_threads();
 
         if (ParallelDescriptor::IOProcessor())
             std::cout << std::setfill('=') << std::setw(46) << " Calculating rho_b P(k) ... " << std::flush;
@@ -758,5 +761,7 @@ do_analysis(const Real     omega_b,
         total_time = ParallelDescriptor::second() - time1;
         if (ParallelDescriptor::IOProcessor())
             std::cout << std::setw(15) << " done. (" << total_time << " sec)" << std::endl;
+
+        fftw_cleanup_threads();
     }
 }
