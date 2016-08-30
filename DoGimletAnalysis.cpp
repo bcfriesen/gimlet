@@ -105,7 +105,8 @@ BL_FORT_PROC_DECL(FFT_3D, fft_3d) (
         const int*      comm,
         const intptr_t* alloc_local,
         const Real*     mf_fft_out_real,
-        const Real*     mf_fft_out_imag);
+        const Real*     mf_fft_out_imag,
+        int*            threads_ok);
 
 BL_FORT_PROC_DECL(FFT_3D_BACKWARD, fft_3d_backward) (
         const Real*     mf_fft_in_real,
@@ -117,7 +118,8 @@ BL_FORT_PROC_DECL(FFT_3D_BACKWARD, fft_3d_backward) (
         const int*      comm,
         const intptr_t* alloc_local,
         const Real*     mf_fft_out_real,
-        const Real*     mf_fft_out_imag);
+        const Real*     mf_fft_out_imag,
+        int*            threads_ok);
 
 BL_FORT_PROC_DECL(CIC_DECONVOLVE, cic_deconvolve) (
     const Real* dm_density_real,
@@ -143,6 +145,10 @@ do_analysis(const Real     omega_b,
             const Geometry &geom,
             const int      nStep)
 {
+
+    int provided;
+    MPI_Query_thread(&provided);
+    int threads_ok = provided >= MPI_THREAD_FUNNELED;
 
     const Real z = (1.0/comoving_a) - 1.0;
 
@@ -507,7 +513,8 @@ do_analysis(const Real     omega_b,
                 &comm,
                 &alloc_local,
                 (rho_dm_fft_out_real)[mfi].dataPtr(),
-                (rho_dm_fft_out_imag)[mfi].dataPtr());
+                (rho_dm_fft_out_imag)[mfi].dataPtr(),
+                &threads_ok);
         }
 
         // Do CIC convolution on k-space dark matter data
@@ -549,7 +556,8 @@ do_analysis(const Real     omega_b,
                 &comm,
                 &alloc_local,
                 (rho_dm_cic_deconvolved_real)[mfi].dataPtr(),
-                (rho_dm_cic_deconvolved_imag)[mfi].dataPtr());
+                (rho_dm_cic_deconvolved_imag)[mfi].dataPtr(),
+                &threads_ok);
         }
 
         MPI_Group_free(&fftw_group);
