@@ -29,10 +29,6 @@ subroutine fft_3d(mf_fft_in, lo, hi, domain_size, dx, comm, alloc_local, mf_fft_
 
     dx3 = dx*dx*dx
 
-    ! Since every process should have exactly 1 box, we won't need to
-    ! make repeated calls to these init() functions.
-    call fftw_mpi_init()
-
     l = domain_size(1)
     m = domain_size(2)
     n = domain_size(3)
@@ -87,7 +83,5 @@ subroutine fft_3d(mf_fft_in, lo, hi, domain_size, dx, comm, alloc_local, mf_fft_
     ! Normalize by cell volume
     mf_fft_out_real (:, :, :, 1) = mf_fft_out_real (:, :, :, 1) * dx3
     mf_fft_out_imag (:, :, :, 1) = mf_fft_out_imag (:, :, :, 1) * dx3
-
-    call fftw_mpi_cleanup()
 
 end subroutine fft_3d

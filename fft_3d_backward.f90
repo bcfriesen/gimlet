@@ -24,10 +24,6 @@ subroutine fft_3d_backward (mf_fft_in_real, mf_fft_in_imag, lo, hi, domain_size,
     integer(c_int) :: i, j, k
     real(c_double) :: grid_volume
 
-    ! Since every process should have exactly 1 box, we won't need to
-    ! make repeated calls to these init() functions.
-    call fftw_mpi_init()
-
     l = domain_size(1)
     m = domain_size(2)
     n = domain_size(3)
@@ -82,7 +78,5 @@ subroutine fft_3d_backward (mf_fft_in_real, mf_fft_in_imag, lo, hi, domain_size,
     ! Normalize by grid volume
     mf_fft_out_real (:, :, :, 1) = mf_fft_out_real (:, :, :, 1) / grid_volume
     mf_fft_out_imag (:, :, :, 1) = mf_fft_out_imag (:, :, :, 1) / grid_volume
-
-    call fftw_mpi_cleanup()
 
 end subroutine fft_3d_backward
